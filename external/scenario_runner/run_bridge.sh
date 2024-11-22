@@ -2,7 +2,6 @@
 set -e
 
 PYTHON_AGENT_PATH=${AUTOWARE_CARLA_ROOT}/external/zenoh_carla_bridge/carla_agent
-SCENARIO_RUNNER_PATH=${AUTOWARE_CARLA_ROOT}/external/scenario_runner
 # Log folder
 LOG_PATH=bridge_log/`date '+%Y-%m-%d_%H:%M:%S'`/
 mkdir -p ${LOG_PATH}
@@ -10,15 +9,13 @@ mkdir -p ${LOG_PATH}
 # Note bridge should run later because it needs to configure Carla sync setting.
 # Python script will overwrite the settings if bridge run first.
 parallel --verbose --lb ::: \
-        "RUST_LOG=z=info ${AUTOWARE_CARLA_ROOT}/external/zenoh_carla_bridge/target/release/zenoh_carla_bridge \
+        "sleep 5 && RUST_LOG=z=info ${AUTOWARE_CARLA_ROOT}/external/zenoh_carla_bridge/target/release/zenoh_carla_bridge \
                 --mode ros2 --zenoh-listen tcp/0.0.0.0:7447 \
                 --zenoh-config ${ZENOH_CARLA_BRIDGE_CONFIG} \
                 --carla-address ${CARLA_SIMULATOR_IP} 2>&1 \
                 | tee ${LOG_PATH}/bridge.log" \
-        "python3.7 ${SCENARIO_RUNNER_PATH}/scenario_runner.py --openscenario ${SCENARIO_RUNNER_PATH}/autoexample/ARG_Carcarana-1_3_I-1-1.xosc" \
-        "sleep 5 && poetry -C ${PYTHON_AGENT_PATH} run python3 ${PYTHON_AGENT_PATH}/main.py --pygame\
-                --host ${CARLA_SIMULATOR_IP} --rolename v1 \
+        "poetry -C ${PYTHON_AGENT_PATH} run python3 ${PYTHON_AGENT_PATH}/main.py \
+                --host ${CARLA_SIMULATOR_IP} --rolename ${VEHICLE_NAME} --pygame\
                 2>&1 | tee ${LOG_PATH}/vehicle.log"
+        # "python3.7 scenario_runner.py --openscenario autoexample/ARG_Carcarana-1_1_I-1-1.xosc"
         
-
-
